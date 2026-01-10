@@ -1,26 +1,22 @@
-"""Configuration for the LLM Council."""
-
+"""Configuration for the Local Distributed LLM Council."""
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# OpenRouter API key
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-
-# Council members - list of OpenRouter model identifiers
-COUNCIL_MODELS = [
-    "openai/gpt-5.1",
-    "google/gemini-3-pro-preview",
-    "anthropic/claude-sonnet-4.5",
-    "x-ai/grok-4",
+# Liste des machines du conseil
+COUNCIL_NODES = [
+    {"name": "OMEN-Iliana", "url": "http://25.41.57.50:11434", "model": "qwen2:7b"},
+    {"name": "Ordi-Auriane", "url": "http://25.31.79.122:11434", "model": "gemma3:4b"},
+    {"name": "PC_Tristan", "url": "http://25.29.137.82:11434", "model": "deepseek-r1:7b"},
 ]
 
-# Chairman model - synthesizes final response
-CHAIRMAN_MODEL = "google/gemini-3-pro-preview"
+# Le Chairman 
+CHAIRMAN_NODE = {
+    "name": "Chairman",
+    "url": "http://localhost:11434",
+    "model": "mistral"
+}
 
-# OpenRouter API endpoint
-OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-# Data directory for conversation storage
+# Stockage des conversations
 DATA_DIR = "data/conversations"
