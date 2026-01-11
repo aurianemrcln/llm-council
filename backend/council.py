@@ -78,17 +78,21 @@ IMPORTANT: Your final ranking MUST be formatted EXACTLY as follows:
 - Then list the responses from best to worst as a numbered list
 - Each line should be: number, period, space, then ONLY the response label (e.g., "1. Response A")
 - Do not add any other text or explanations in the ranking section
+- Rank only the responses provided, do not invent new ones. If their is only 2 responses, rank 2 responses (A and B). If their is only 3 responses, rank  responses (A, B and C) ...
+- The ranking bellow is an example only; your actual rankings will depend on your evaluation.
 
-Example of the correct format for your ENTIRE response:
+Example of the correct format for your ENTIRE response: (
 
-Response A provides good detail on X but misses Y...
-Response B is accurate but lacks depth on Z...
-Response C offers the most comprehensive answer...
+    Response A provides good detail on X but misses Y...
+    Response B is accurate but lacks depth on Z...
+    Response C offers the most comprehensive answer...
 
-FINAL RANKING:
-1. Response C
-2. Response A
-3. Response B
+    FINAL RANKING:
+    1. Response C
+    2. Response A
+    3. Response B
+
+)
 
 Now provide your evaluation and ranking:"""
 
@@ -138,7 +142,10 @@ async def stage3_synthesize_final(
         f"Model: {result['model']}\nRanking: {result['ranking']}"
         for result in stage2_results
     ])
-
+    print("Stage 1 Text for Chairman:\n", stage1_text)
+    print("aaaaaaaaaaaaaa")
+    print("Stage 2 Text for Chairman:\n", stage2_text)
+    print("bbbbbbbbbbbb")
     chairman_prompt = f"""You are the Chairman of an LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
 
 Original Question: {user_query}
@@ -153,8 +160,10 @@ Your task as Chairman is to synthesize all of this information into a single, co
 - The individual responses and their insights
 - The peer rankings and what they reveal about response quality
 - Any patterns of agreement or disagreement
+- You just need to give a final answer of the Original Question not to give your personal ranking
 
-Provide a clear, well-reasoned final answer that represents the council's collective wisdom:"""
+Provide a clear, well-reasoned final answer that represents the council's collective wisdom.
+You should answer to the Original Question, i don't care about knowing what each model answer and their rankings, i just want you to answer my question:"""
 
     messages = [{"role": "user", "content": chairman_prompt}]
 
