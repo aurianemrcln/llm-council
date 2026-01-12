@@ -42,20 +42,70 @@ OPENROUTER_API_KEY=sk-or-v1-...
 
 Get your API key at [openrouter.ai](https://openrouter.ai/). Make sure to purchase the credits you need, or sign up for automatic top up.
 
-### 3. Configure Models (Optional)
+### 3. Configure Models
 
 Edit `backend/config.py` to customize the council:
 
 ```python
 COUNCIL_MODELS = [
-    "openai/gpt-5.1",
-    "google/gemini-3-pro-preview",
-    "anthropic/claude-sonnet-4.5",
-    "x-ai/grok-4",
+    "qwen2:7b",
+    "gemma3:4b",
+    "deepseek-r1:7b",
+    "codellama:7b"
 ]
 
-CHAIRMAN_MODEL = "google/gemini-3-pro-preview"
+CHAIRMAN_MODEL = "mistral"
 ```
+
+### 4. Prerequisite
+
+Download Ollama (https://ollama.com/download)
+
+Open Ollama:
+- Windows button
+- "Ollama" > Enter
+
+Configure TCP port:
+- Windows button
+- "pare feu Windows" > Enter
+- Parametres avancés
+- Regle de trafic entrant
+- Nouvelle Regle
+- Type de regle : "port"
+- Protocole: "TCP"
+- Port locaux spécifique: "11434"
+- Action: "autoriser la connexion"
+- Profil: cocher les 3
+- Nom: "port Ollama"
+
+Variable d'environnement:
+- Windows button
+- "modifier les variables d'environnement" > Enter
+- Variables d'environnement
+- Variable utilisateur
+- Nouvelle
+- Nom: "OLLAMA_HOST"
+- Valeur: "0.0.0.0"
+
+Close Ollama:
+- arrow in the bottom right of your screen
+![alt text](image.png)
+- right clic on the Ollama logo
+- quit Ollama
+
+Open Ollama:
+- Windows button
+- "Ollama" > Enter
+
+Check that everything is good:
+- Windows button
+- "cmd" > Enter
+- "netstat -an | findstr 11434" > Enter
+
+You should see this row:
+
+TCP    0.0.0.0:11434          0.0.0.0:0              LISTENING
+
 
 ## Running the Application
 
