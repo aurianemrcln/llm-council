@@ -69,9 +69,7 @@ Here are the responses from different models (anonymized):
 
 {responses_text}
 
-Your task:
-1. First, evaluate each response individually. For each response, explain what it does well and what it does poorly.
-2. Then, at the very end of your response, provide a final ranking.
+Your task: provide a final ranking.
 
 IMPORTANT: Your final ranking MUST be formatted EXACTLY as follows:
 - Start with the line "FINAL RANKING:" (all caps, with colon)
@@ -83,18 +81,14 @@ IMPORTANT: Your final ranking MUST be formatted EXACTLY as follows:
 
 Example of the correct format for your ENTIRE response: (
 
-    Response A provides good detail on X but misses Y...
-    Response B is accurate but lacks depth on Z...
-    Response C offers the most comprehensive answer...
-
-    FINAL RANKING:
+    FINAL RANKING:  
     1. Response C
     2. Response A
     3. Response B
 
 )
 
-Now provide your evaluation and ranking:"""
+Now provide your ranking:"""
 
     messages = [{"role": "user", "content": ranking_prompt}]
 
@@ -116,71 +110,109 @@ Now provide your evaluation and ranking:"""
     return stage2_results, label_to_model
 
 
+
 async def stage3_synthesize_final(
-    user_query: str,
-    stage1_results: List[Dict[str, Any]],
-    stage2_results: List[Dict[str, Any]]
+    stage1_results: List[Dict[str, Any]], 
+    aggregate_rankings: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
-    """
-    Stage 3: Chairman synthesizes final response.
-
-    Args:
-        user_query: The original user query
-        stage1_results: Individual model responses from Stage 1
-        stage2_results: Rankings from Stage 2
-
-    Returns:
-        Dict with 'model' and 'response' keys
-    """
-    # Build comprehensive context for chairman
-    stage1_text = "\n\n".join([
-        f"Model: {result['model']}\nResponse: {result['response']}"
-        for result in stage1_results
-    ])
-
-    stage2_text = "\n\n".join([
-        f"Model: {result['model']}\nRanking: {result['ranking']}"
-        for result in stage2_results
-    ])
-    print("Stage 1 Text for Chairman:\n", stage1_text)
-    print("aaaaaaaaaaaaaa")
-    print("Stage 2 Text for Chairman:\n", stage2_text)
-    print("bbbbbbbbbbbb")
-    chairman_prompt = f"""You are the Chairman of an LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
-
-Original Question: {user_query}
-
-STAGE 1 - Individual Responses:
-{stage1_text}
-
-STAGE 2 - Peer Rankings:
-{stage2_text}
-
-Your task as Chairman is to synthesize all of this information into a single, comprehensive, accurate answer to the user's original question. Consider:
-- The individual responses and their insights
-- The peer rankings and what they reveal about response quality
-- Any patterns of agreement or disagreement
-- You just need to give a final answer of the Original Question not to give your personal ranking
-
-Provide a clear, well-reasoned final answer that represents the council's collective wisdom.
-You should answer to the Original Question, i don't care about knowing what each model answer and their rankings, i just want you to answer my question:"""
-
-    messages = [{"role": "user", "content": chairman_prompt}]
-
-    # Query the chairman model
-    response = await query_model(CHAIRMAN_NODE['url'], CHAIRMAN_NODE['model'], messages)
-
-    if response is None:
-        # Fallback if chairman fails
+    
+    # 1. Vérifier si on a des classements
+    if not aggregate_rankings:
         return {
-            "model": CHAIRMAN_NODE['model'],
-            "response": "Error: Unable to generate final synthesis."
+            "model": "System",
+            "response": "Aucun classement n'a pu être établi pour déterminer la meilleure réponse."
         }
 
-    return {
-        "model": CHAIRMAN_NODE['model'],
-        "response": response.get('content', '')
-    }
+    # 2. Récupérer le nom du meilleur modèle (le premier dans la liste triée)
+    best_model_name = aggregate_rankings[0]['model']
+    print(f"\nLe meilleur modèle est : {best_model_name}", flush=True)
+
+    # 3. Chercher la réponse correspondante dans stage1_results
+    # On utilise next() pour trouver le premier dictionnaire dont le nom de modèle correspond
+    best_result = next(
+        (res for res in stage1_results if res['model'] == best_model_name),
+        None
+    )
+
+    if best_result:
+        print(f"Réponse sélectionnée avec succès.", flush=True)
+        return {
+            "model": best_model_name,
+            "response": best_result['response']
+        }
+    else:
+        return {
+            "model": "Error",
+            "response": "Le meilleur modèle a été identifié mais sa réponse est introuvable."
+        }
+
+
+# async def stage3_synthesize_final(
+#     user_query: str,
+#     stage1_results: List[Dict[str, Any]],
+#     stage2_results: List[Dict[str, Any]]
+# ) -> Dict[str, Any]:
+#     """
+#     Stage 3: Chairman synthesizes final response.
+
+#     Args:
+#         user_query: The original user query
+#         stage1_results: Individual model responses from Stage 1
+#         stage2_results: Rankings from Stage 2
+
+#     Returns:
+#         Dict with 'model' and 'response' keys
+#     """
+#     # Build comprehensive context for chairman
+#     stage1_text = "\n\n".join([
+#         f"Model: {result['model']}\nResponse: {result['response']}"
+#         for result in stage1_results
+#     ])
+
+#     stage2_text = "\n\n".join([
+#         f"Model: {result['model']}\nRanking: {result['ranking']}"
+#         for result in stage2_results
+#     ])
+#     chairman_prompt = f"""You are the Chairman of an LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
+
+# Original Question: {user_query}
+
+# STAGE 1 - Individual Responses:
+# {stage1_text}
+
+# STAGE 2 - Peer Rankings:
+# {stage2_text}
+
+# Your Role as Chairman:
+# Find the best answer according to peers rankings.
+# Return only this final best answer to the Original Question.
+# """
+# # Your task as Chairman is to synthesize all of this information into a single, comprehensive, accurate answer to the user's original question. Consider:
+# # - The individual responses and their insights
+# # - The peer rankings and what they reveal about response quality
+# # - Any patterns of agreement or disagreement
+# # - You just need to give a final answer of the Original Question not to give your personal ranking
+
+# # Provide a clear, well-reasoned final answer that represents the council's collective wisdom.
+# # You should answer to the Original Question, i don't care about knowing what each model answer and their rankings, i just want you to answer my question:"""
+
+#     messages = [{"role": "user", "content": chairman_prompt}]
+#     print(chairman_prompt, flush=True)
+
+#     # Query the chairman model
+#     response = await query_model(CHAIRMAN_NODE['url'], CHAIRMAN_NODE['model'], messages)
+
+#     if response is None:
+#         # Fallback if chairman fails
+#         return {
+#             "model": CHAIRMAN_NODE['model'],
+#             "response": "Error: Unable to generate final synthesis."
+#         }
+
+#     return {
+#         "model": CHAIRMAN_NODE['model'],
+#         "response": response.get('content', '')
+#     }
 
 
 def parse_ranking_from_text(ranking_text: str) -> List[str]:
@@ -197,8 +229,8 @@ def parse_ranking_from_text(ranking_text: str) -> List[str]:
 
     # Look for "FINAL RANKING:" section
     if "FINAL RANKING:" in ranking_text:
-        # Extract everything after "FINAL RANKING:"
-        parts = ranking_text.split("FINAL RANKING:")
+        # Extract everything after "RANKING:"
+        parts = ranking_text.split("RANKING:")
         if len(parts) >= 2:
             ranking_section = parts[1]
             # Try to extract numbered list format (e.g., "1. Response A")
@@ -329,11 +361,13 @@ async def run_full_council(user_query: str) -> Tuple[List, List, Dict, Dict]:
     aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_model)
 
     # Stage 3: Synthesize final answer
-    stage3_result = await stage3_synthesize_final(
-        user_query,
-        stage1_results,
-        stage2_results
-    )
+    # stage3_result = await stage3_synthesize_final(
+    #     user_query,
+    #     stage1_results,
+    #     stage2_results
+    # )
+
+    stage3_result = await stage3_synthesize_final(stage1_results, aggregate_rankings)
 
     # Prepare metadata
     metadata = {
